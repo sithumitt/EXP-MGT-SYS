@@ -1,4 +1,4 @@
-name: Flutter Web CI/CD and Hosting
+name: Flutter Multi-Platform CI/CD
 
 on:
   push:
@@ -6,12 +6,17 @@ on:
       - main
 
 jobs:
-  build_and_deploy:
+  build_all:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -21,8 +26,8 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      # --- WEB DEPLOYMENT ---
       - name: Build Web App
-        # IMPORTANT: Replace YOUR_REPO_NAME with your actual repository name
         run: flutter build web --release --base-href "/EXP-MGT-SYS/"
 
       - name: Deploy to GitHub Pages
@@ -30,3 +35,13 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
+
+      # --- ANDROID BUILD ---
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
