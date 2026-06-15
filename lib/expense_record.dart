@@ -1,3 +1,4 @@
+// Purpose: Defines the data structure for an expense record.
 class ExpenseRecord {
   String id;
   double cashInHand;
@@ -11,8 +12,10 @@ class ExpenseRecord {
     required this.date,
   });
 
+  // Calculates the money left after expenses.
   double get remaining => cashInHand - expense;
 
+  // Converts database JSON data into an ExpenseRecord object.
   factory ExpenseRecord.fromJson(Map<String, dynamic> json) {
     return ExpenseRecord(
       id: json['id'] as String,

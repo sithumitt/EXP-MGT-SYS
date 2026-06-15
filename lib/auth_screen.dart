@@ -1,6 +1,8 @@
+// Purpose: Handles user login and sign up.
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'category_screen.dart';
+import 'database_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -10,11 +12,13 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  final _dbService = DatabaseService();
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool isLogin = true;
 
+  // Validates form and logs in or signs up the user.
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       final email = _emailController.text.trim();
@@ -22,16 +26,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
       try {
         if (isLogin) {
-          await Supabase.instance.client.auth.signInWithPassword(
-            email: email,
-            password: password,
-          );
-          _navigateToCategory(email);
+          await _dbService.signIn(email, password);
+          _navigateToCategory();
         } else {
-          await Supabase.instance.client.auth.signUp(
-            email: email,
-            password: password,
-          );
+          await _dbService.signUp(email, password);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Sign up successful! You can now log in.'),
@@ -47,14 +45,16 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  void _navigateToCategory(String email) {
+  // Moves the user to the category selection screen.
+  void _navigateToCategory() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => CategoryScreen(username: email)),
+      MaterialPageRoute(builder: (context) => const CategoryScreen()),
     );
   }
 
   @override
+  // Builds the login/signup form UI.
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(isLogin ? "Login" : "Sign Up")),

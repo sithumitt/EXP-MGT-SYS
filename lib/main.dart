@@ -1,7 +1,9 @@
+// Purpose: Main entry point of the app. Initializes Supabase and starts the app.
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'welcome_screen.dart';
 
+// Starts the app and connects to Supabase backend.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
@@ -16,6 +18,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
+  // Builds the main app UI and sets the app theme.
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Expense Management System',

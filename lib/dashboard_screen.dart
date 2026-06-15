@@ -1,18 +1,18 @@
+// Purpose: The main dashboard where users can view, add, edit, and delete expenses.
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'expense_record.dart';
 import 'welcome_screen.dart';
+import 'database_service.dart';
 
 class DashboardScreen extends StatefulWidget {
-  final String username;
-  const DashboardScreen({super.key, required this.username});
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final _supabase = Supabase.instance.client;
+  final _dbService = DatabaseService();
   final _formKey = GlobalKey<FormState>();
   final _cashController = TextEditingController();
   final _expenseController = TextEditingController();
@@ -21,6 +21,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _showRemaining = false;
 
   @override
+  // Runs when screen loads. Listens to text field changes.
   void initState() {
     super.initState();
     _cashController.addListener(_calculateRealtime);
@@ -28,12 +29,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   @override
+  // Cleans up memory when screen closes.
   void dispose() {
     _cashController.dispose();
     _expenseController.dispose();
     super.dispose();
   }
 
+  // Calculates the remaining balance instantly when user types.
   void _calculateRealtime() {
     final cash = double.tryParse(_cashController.text) ?? 0.0;
     final expense = double.tryParse(_expenseController.text) ?? 0.0;
@@ -43,16 +46,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  // Saves a new expense record to the database.
   Future<void> _addRecord() async {
     if (_formKey.currentState!.validate()) {
       final cash = double.tryParse(_cashController.text) ?? 0.0;
       final expense = double.tryParse(_expenseController.text) ?? 0.0;
 
-      await _supabase.from('expense_records').insert({
-        'cash_in_hand': cash,
-        'expense': expense,
-        'user_id': _supabase.auth.currentUser!.id,
-      });
+      await _dbService.addRecord(cash, expense);
 
       _cashController.clear();
       _expenseController.clear();
@@ -61,6 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // Opens a popup to edit an existing expense record.
   void _showEditDialog(ExpenseRecord record) {
     final editCashController = TextEditingController(
       text: record.cashInHand.toString(),
@@ -115,15 +116,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (editFormKey.currentState!.validate()) {
-                  await _supabase
-                      .from('expense_records')
-                      .update({
-                        'cash_in_hand':
-                            double.tryParse(editCashController.text) ?? 0.0,
-                        'expense':
-                            double.tryParse(editExpenseController.text) ?? 0.0,
-                      })
-                      .eq('id', record.id);
+                  await _dbService.updateRecord(
+                    record.id,
+                    double.tryParse(editCashController.text) ?? 0.0,
+                    double.tryParse(editExpenseController.text) ?? 0.0,
+                  );
                   Navigator.pop(context);
                 }
               },
@@ -135,6 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Opens a popup to confirm deleting an expense record.
   void _showDeleteDialog(String id) {
     showDialog(
       context: context,
@@ -149,7 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             TextButton(
               onPressed: () async {
-                await _supabase.from('expense_records').delete().eq('id', id);
+                await _dbService.deleteRecord(id);
                 Navigator.pop(context);
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -162,6 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   @override
+  // Builds the dashboard UI with input forms and the list of records.
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -171,7 +170,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
             onPressed: () async {
-              await _supabase.auth.signOut();
+              await _dbService.signOut();
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const WelcomeScreen()),
@@ -253,10 +252,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Divider(height: 1),
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _supabase
-                  .from('expense_records')
-                  .stream(primaryKey: ['id'])
-                  .order('created_at'),
+              stream: _dbService.getRecordsStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

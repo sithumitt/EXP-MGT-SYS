@@ -1,11 +1,12 @@
+// Purpose: Lets the user select their category (Adult, Teenage, etc.).
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 
 class CategoryScreen extends StatelessWidget {
-  final String username;
-  const CategoryScreen({super.key, required this.username});
+  const CategoryScreen({super.key});
 
   @override
+  // Builds the grid of category buttons.
   Widget build(BuildContext context) {
     final categories = ["Adult", "Teenage", "Employee", "Entrepreneur"];
 
@@ -35,8 +36,7 @@ class CategoryScreen extends StatelessWidget {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            DashboardScreen(username: username),
+                        builder: (context) => const DashboardScreen(),
                       ),
                     );
                   },

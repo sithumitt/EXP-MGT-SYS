@@ -1,3 +1,4 @@
+// Purpose: The first screen users see. Shows welcome message and login button.
 import 'package:flutter/material.dart';
 import 'auth_screen.dart';
 
@@ -5,6 +6,7 @@ class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
+  // Builds the welcome screen layout.
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
